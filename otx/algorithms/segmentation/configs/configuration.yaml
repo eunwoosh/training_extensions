@@ -126,7 +126,7 @@ learning_parameters:
     visible_in_ui: true
     warning: null
   num_workers:
-    affects_outcome_of: NONE
+    affects_outcome_of: TRAINING
     auto_hpo_state: not_possible
     auto_hpo_value: null
     default_value: 0
