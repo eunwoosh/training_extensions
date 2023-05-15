@@ -18,9 +18,13 @@
 
 import datetime
 import time
+import multiprocessing as mp
+from multiprocessing import Process
 from contextlib import ExitStack
 from pathlib import Path
 from typing import Optional
+
+import psutil
 
 from otx.api.entities.model import ModelEntity
 from otx.api.entities.task_environment import TaskEnvironment
@@ -174,6 +178,10 @@ def main():
 
 
 def train(exit_stack: Optional[ExitStack] = None):  # pylint: disable=too-many-branches, too-many-statements
+    queue = mp.Queue()
+    mem_check_p = Process(target=check_max_cpu_memory, args=(queue,))
+    mem_check_p.start()
+
     """Function that is used for model training."""
     start_time = time.time()
     mode = "train"
@@ -298,7 +306,32 @@ def train(exit_stack: Optional[ExitStack] = None):  # pylint: disable=too-many-b
     if not is_multigpu_child_process():
         task.cleanup()
 
+    queue.put(config_manager.workspace_root / "mem.txt")
+    mem_check_p.join(10)
+    if mem_check_p.exitcode is None:
+        mem_check_p.terminate()
+    mem_check_p.close()
+
     return dict(retcode=0, template=template.name)
+
+
+def check_max_cpu_memory(queue: mp.Queue):
+    one_gb = 1024**3
+    mem_used_before = round(psutil.virtual_memory().used / one_gb, 3)
+    max_mem_used = mem_used_before
+    while True:
+        mem_used = round(psutil.virtual_memory().used / one_gb, 3)
+        if max_mem_used < mem_used:
+            max_mem_used = mem_used
+        time.sleep(0.1)
+        if not queue.empty():
+            break
+
+    output_path = queue.get()
+
+    with open(output_path, "w") as f:
+        f.write(f"mem_used_before\t{mem_used_before} GiB\nmax_mem_used\t{max_mem_used} GiB\n")
+
 
 
 if __name__ == "__main__":
