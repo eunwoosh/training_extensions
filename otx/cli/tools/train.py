@@ -179,7 +179,7 @@ def main():
 
 def train(exit_stack: Optional[ExitStack] = None):  # pylint: disable=too-many-branches, too-many-statements
     queue = mp.Queue()
-    mem_check_p = Process(target=check_max_cpu_memory, args=(queue,))
+    mem_check_p = Process(target=check_resource, args=(queue,))
     mem_check_p.start()
 
     """Function that is used for model training."""
@@ -306,7 +306,7 @@ def train(exit_stack: Optional[ExitStack] = None):  # pylint: disable=too-many-b
     if not is_multigpu_child_process():
         task.cleanup()
 
-    queue.put(config_manager.workspace_root / "mem.txt")
+    queue.put(config_manager.workspace_root / "resource.txt")
     mem_check_p.join(10)
     if mem_check_p.exitcode is None:
         mem_check_p.terminate()
@@ -315,22 +315,40 @@ def train(exit_stack: Optional[ExitStack] = None):  # pylint: disable=too-many-b
     return dict(retcode=0, template=template.name)
 
 
-def check_max_cpu_memory(queue: mp.Queue):
+def check_resource(queue: mp.Queue):
+    psutil.cpu_percent(interval=None, percpu=False)  # start to measure cpu utilization
+    max_cpu_util = 0
+    avg_cpu_util = 0
+
     one_gb = 1024**3
     mem_used_before = round(psutil.virtual_memory().used / one_gb, 3)
     max_mem_used = mem_used_before
+
+    num_counts = 0
     while True:
         mem_used = round(psutil.virtual_memory().used / one_gb, 3)
         if max_mem_used < mem_used:
             max_mem_used = mem_used
         time.sleep(0.1)
+        cpu_util = psutil.cpu_percent(interval=None, percpu=False)
+        avg_cpu_util += cpu_util
+        if max_cpu_util < cpu_util:
+            max_cpu_util = cpu_util
+        num_counts += 1
+
+
         if not queue.empty():
             break
 
     output_path = queue.get()
 
     with open(output_path, "w") as f:
-        f.write(f"mem_used_before\t{mem_used_before} GiB\nmax_mem_used\t{max_mem_used} GiB\n")
+        f.write(
+            f"mem_used_before\t{mem_used_before} GiB\n"
+            f"max_mem_used\t{max_mem_used} GiB\n "
+            f"avg_cpu_util\t{avg_cpu_util / num_counts} %\n "
+            f"max_cpu_util\t{max_cpu_util} %\n "
+        )
 
 
 
