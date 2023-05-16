@@ -19,6 +19,7 @@
 import datetime
 import time
 import multiprocessing as mp
+import pynvml
 from multiprocessing import Process
 from contextlib import ExitStack
 from pathlib import Path
@@ -324,30 +325,44 @@ def check_resource(queue: mp.Queue):
     mem_used_before = round(psutil.virtual_memory().used / one_gb, 3)
     max_mem_used = mem_used_before
 
+    pynvml.nvmlInit()
+    handle = pynvml.nvmlDeviceGetHandleByIndex(0)
+    avg_gpu_util = 0
+
     num_counts = 0
     while True:
+        # memory
         mem_used = round(psutil.virtual_memory().used / one_gb, 3)
         if max_mem_used < mem_used:
             max_mem_used = mem_used
+
         time.sleep(0.1)
+
+        # cpu
         cpu_util = psutil.cpu_percent(interval=None, percpu=False)
         avg_cpu_util += cpu_util
         if max_cpu_util < cpu_util:
             max_cpu_util = cpu_util
-        num_counts += 1
 
+        # gpu
+        gpu_info = pynvml.nvmlDeviceGetUtilizationRates(handle)
+        avg_gpu_util += gpu_info.gpu
+
+        num_counts += 1
 
         if not queue.empty():
             break
 
+    pynvml.nvmlShutdown()
     output_path = queue.get()
 
     with open(output_path, "w") as f:
         f.write(
             f"mem_used_before\t{mem_used_before} GiB\n"
-            f"max_mem_used\t{max_mem_used} GiB\n "
-            f"avg_cpu_util\t{avg_cpu_util / num_counts} %\n "
-            f"max_cpu_util\t{max_cpu_util} %\n "
+            f"max_mem_used\t{max_mem_used} GiB\n"
+            f"avg_cpu_util\t{avg_cpu_util / num_counts} %\n"
+            f"max_cpu_util\t{max_cpu_util} %\n"
+            f"avg_gpu_util\t{avg_gpu_util / num_counts} %\n"
         )
 
 
