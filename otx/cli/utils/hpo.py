@@ -36,6 +36,10 @@ logger = logging.getLogger(__name__)
 
 
 def _check_hpo_enabled_task(task_type):
+    is_action_task = False
+    if os.getenv("FEATURE_FLAGS_OTX_ACTION_TASKS", "0") == "1":
+        is_action_task =  task_type in [TaskType.ACTION_CLASSIFICATION, TaskType.ACTION_DETECTION]
+
     return task_type in [
         TaskType.CLASSIFICATION,
         TaskType.DETECTION,
@@ -45,7 +49,7 @@ def _check_hpo_enabled_task(task_type):
         TaskType.ANOMALY_CLASSIFICATION,
         TaskType.ANOMALY_DETECTION,
         TaskType.ANOMALY_SEGMENTATION,
-    ]
+    ] or is_action_task
 
 
 class TaskManager:
@@ -69,7 +73,7 @@ class TaskManager:
         Returns:
             bool: whether task is run on mmcv
         """
-        return self.is_cls_framework_task() or self.is_det_framework_task() or self.is_seg_framework_task()
+        return self.is_cls_framework_task() or self.is_det_framework_task() or self.is_seg_framework_task() or self.is_action_framework_task()
 
     def is_cls_framework_task(self) -> bool:
         """Check that task is run on mmcls framework.
@@ -98,6 +102,19 @@ class TaskManager:
             bool: whether tasks is run on mmseg
         """
         return self._task_type == TaskType.SEGMENTATION
+
+    def is_action_framework_task(self) -> bool:
+        """Check that task is run on mmaction framework.
+
+        Returns:
+            bool: whether tasks is run on mmaction
+        """
+        if os.getenv("FEATURE_FLAGS_OTX_ACTION_TASKS", "0") == "1":
+            return self._task_type in [
+                TaskType.ACTION_CLASSIFICATION,
+                TaskType.ACTION_DETECTION,
+            ]
+        return False
 
     def is_anomaly_framework_task(self) -> bool:
         """Check taht task is run on anomalib.

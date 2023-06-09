@@ -66,14 +66,15 @@ class CancelInterfaceHook(Hook):
             logger.warning("runner is not configured yet. ignored this request.")
             return
 
-        if self.runner.should_stop:
+        if getattr(self.runner, "should_stop", False):
             logger.warning("cancel already requested.")
             return
 
         if isinstance(self.runner, EpochBasedRunner):
             epoch = self.runner.epoch
             self.runner._max_epochs = epoch  # Force runner to stop by pretending it has reached it's max_epoch
-        self.runner.should_stop = True  # Set this flag to true to stop the current training epoch
+        if hasattr(self.runner, "should_stop"):
+            self.runner.should_stop = True  # Set this flag to true to stop the current training epoch
         logger.info("requested stopping to the runner")
 
     def before_run(self, runner):
