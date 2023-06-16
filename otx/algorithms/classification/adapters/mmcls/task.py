@@ -46,11 +46,10 @@ from otx.algorithms.common.adapters.mmcv.utils import (
     build_data_parallel,
     get_configs_by_pairs,
     patch_data_pipeline,
-)
-from otx.algorithms.common.adapters.mmcv.utils import (
+    set_input_size,
     build_dataloader as otx_build_dataloader,
+    build_dataset as otx_build_dataset,
 )
-from otx.algorithms.common.adapters.mmcv.utils import build_dataset as otx_build_dataset
 from otx.algorithms.common.adapters.mmcv.utils.config_utils import (
     MPAConfig,
     get_adaptive_num_workers,
@@ -700,6 +699,16 @@ class MMClassificationTask(OTXClassificationTask):
 
         if self._hyperparams.learning_parameters.auto_num_workers:
             config.data.workers_per_gpu = get_adaptive_num_workers()
+
+        if self._hyperparams.learning_parameters.input_size != 0:
+            for data_type in ["train", "val", "test"]:
+                if data_type in self._recipe_cfg.data:
+                    if 'dataset' in self._recipe_cfg.data[data_type]:
+                        pipeline = self._recipe_cfg.data[data_type]['dataset']['pipeline']
+                    else:
+                        pipeline = self._recipe_cfg.data[data_type]['pipeline']
+
+                    set_input_size(pipeline, self._hyperparams.learning_parameters.input_size)
 
         if self._train_type.value == "Semisupervised":
             unlabeled_config = ConfigDict(
