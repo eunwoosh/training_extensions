@@ -23,6 +23,10 @@ from typing import Callable, Optional, Tuple
 
 import numpy as np
 import yaml
+import torch
+from torch import distributed as dist
+
+from otx.algorithms.common.utils.distance_utils import get_dist_info
 
 
 class UncopiableDefaultDict(defaultdict):
@@ -126,3 +130,13 @@ def get_default_async_reqs_num() -> int:
         return reqs_num
     else:
         return 1
+
+
+def torch_save_w_distributed_train(*args, **kwargs):
+    if not dist.is_initialized():
+        torch.save(*args, **kwargs)
+        return
+
+    if dist.get_rank() == 0:
+        torch.save(*args, **kwargs)
+    dist.barrier()

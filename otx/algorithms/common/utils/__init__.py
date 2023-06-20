@@ -27,6 +27,7 @@ from .utils import (
     get_task_class,
     load_template,
     set_random_seed,
+    torch_save_w_distributed_train,
 )
 
 __all__ = [
@@ -42,4 +43,5 @@ __all__ = [
     "get_arg_spec",
     "get_image",
     "set_random_seed",
+    "torch_save_w_distributed_train",
 ]
