@@ -15,7 +15,7 @@
 # and limitations under the License.
 
 import math
-from typing import List, Optional, Union
+from typing import List, Optional, Union, Optional
 
 from mmcv import Config, ConfigDict
 
@@ -422,7 +422,7 @@ def patch_input_preprocessing(cfg: ConfigDict, deploy_cfg: ConfigDict):
     deploy_cfg.backend_config.mo_options = mo_options
 
 
-def patch_input_shape(cfg: ConfigDict, deploy_cfg: ConfigDict):
+def patch_input_shape(cfg: ConfigDict, deploy_cfg: ConfigDict, input_size: Optional[int] = None):
     """Update backend configuration with input shape information.
 
     This function retrieves the Resize config from `cfg.data.test.pipeline`, checks
@@ -443,13 +443,16 @@ def patch_input_shape(cfg: ConfigDict, deploy_cfg: ConfigDict):
     Returns:
         None: This function updates the input `deploy_cfg` object directly.
     """
-    resize_cfgs = get_configs_by_pairs(
-        cfg.data.test.pipeline,
-        dict(type="MultiScaleFlipAug"),
-    )
-    assert len(resize_cfgs) == 1
-    resize_cfg: ConfigDict = resize_cfgs[0]
-    size = resize_cfg.img_scale
+    if input_size is None:
+        resize_cfgs = get_configs_by_pairs(
+            cfg.data.test.pipeline,
+            dict(type="MultiScaleFlipAug"),
+        )
+        assert len(resize_cfgs) == 1
+        resize_cfg: ConfigDict = resize_cfgs[0]
+        size = resize_cfg.img_scale
+    else:
+        size = input_size
     if isinstance(size, int):
         size = (size, size)
     assert all(isinstance(i, int) and i > 0 for i in size)

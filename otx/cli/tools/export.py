@@ -65,7 +65,6 @@ def get_args():
         "--input-size",
         help="Set input size of model to export.",
         type=int,
-        default=0,
     )
 
     return parser.parse_args()
