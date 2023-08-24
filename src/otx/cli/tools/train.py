@@ -42,6 +42,7 @@ from otx.cli.utils.parser import (
     get_parser_and_hprams_data,
 )
 from otx.cli.utils.report import get_otx_report
+from otx.cli.utils.experiment import run_process_to_check_resource
 from otx.core.data.adapter import get_dataset_adapter
 
 
@@ -159,6 +160,10 @@ def get_args():
         default=None,
         help="Encryption key required to train the encrypted dataset. It is not required the non-encrypted dataset",
     )
+    parser.add_argument(
+        "--track-resource-usage",
+        action="store_true",
+    )
 
     sub_parser = add_hyper_parameters_sub_parser(parser, hyper_parameters, return_sub_parser=True)
     # TODO: Temporary solution for cases where there is no template input
@@ -268,6 +273,9 @@ def train(exit_stack: Optional[ExitStack] = None):  # pylint: disable=too-many-b
                     "Warning: due to abstract of ExitStack context, "
                     "if main process raises an error, all processes can be stuck."
                 )
+
+    if args.track_resource_usage:
+        run_process_to_check_resource(config_manager.output_path, exit_stack)
 
     task = task_class(task_environment=environment, output_path=str(config_manager.output_path / "logs"))
 
