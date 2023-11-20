@@ -87,4 +87,4 @@ model = dict(
 load_from = "https://storage.openvinotoolkit.org/repositories/openvino_training_extensions\
 /models/object_detection/v2/mobilenet_v2-atss.pth"
 
-fp16 = dict(loss_scale=512.0)
+fp16 = None
