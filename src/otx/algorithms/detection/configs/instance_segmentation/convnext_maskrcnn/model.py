@@ -130,4 +130,4 @@ evaluation = dict(interval=1, metric="mAP", save_best="mAP", iou_thr=[0.5])
 ignore = True
 
 custom_imports = dict(imports=["mmcls.models"], allow_failed_imports=False)
-fp16 = dict(loss_scale=dict(init_scale=512.0))
+fp16 = None

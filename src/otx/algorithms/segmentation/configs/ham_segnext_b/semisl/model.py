@@ -67,4 +67,4 @@ model = dict(
 
 load_from = "https://download.openmmlab.com/mmsegmentation/v0.5/pretrain/segnext/mscan_b_20230227-3ab7d230.pth"
 optimizer = dict(paramwise_cfg=dict(custom_keys={"pos_block": dict(decay_mult=0.0), "norm": dict(decay_mult=0.0)}))
-fp16 = dict(loss_scale=512.0)
+fp16 = None

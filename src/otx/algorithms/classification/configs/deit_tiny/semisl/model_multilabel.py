@@ -26,4 +26,4 @@ model = dict(
     ),
 )
 
-fp16 = dict(loss_scale=512.0)
+fp16 = None
