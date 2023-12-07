@@ -51,6 +51,7 @@ class OTXDetectionLitModule(OTXLitModule):
 
     def _log_metrics(self, meter: MeanAveragePrecision, key: str) -> None:
         results = meter.compute()
+        print("*"*100, f"mAP50 : {results['map_50']}\n")
         for k, v in results.items():
             if not isinstance(v, Tensor):
                 log.debug("Cannot log item which is not Tensor")

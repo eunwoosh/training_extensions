@@ -11,7 +11,8 @@ from datumaro import Dataset as DmDataset
 from lightning import LightningDataModule
 from torch.utils.data import DataLoader
 
-from otx.core.data.factory import OTXDatasetFactory
+from otx.core.data.factory import OTXDatasetFactory, TransformLibFactory
+from otx.core.data.dataset.detection import YOLOXOTXDetectionDataset
 from otx.core.data.mem_cache import (
     MemCacheHandlerSingleton,
     parse_mem_cache_size_to_int,
@@ -53,11 +54,15 @@ class OTXDataModule(LightningDataModule):
                 log.warning(f"{name} is not available. Skip it")
                 continue
 
-            self.subsets[name] = OTXDatasetFactory.create(
-                task=self.task,
-                dm_subset=dm_subset,
-                config=config_mapping[name],
-            )
+            if name == "train": 
+                transforms = TransformLibFactory.generate(config_mapping[name])
+                self.subsets[name] = YOLOXOTXDetectionDataset(dm_subset, transforms)
+            else:
+                self.subsets[name] = OTXDatasetFactory.create(
+                    task=self.task,
+                    dm_subset=dm_subset,
+                    config=config_mapping[name],
+                )
             log.info(f"Add name: {name}, self.subsets: {self.subsets}")
 
         mem_size = parse_mem_cache_size_to_int(config.mem_cache_size)

@@ -8,6 +8,7 @@ from __future__ import annotations
 from collections import defaultdict
 from time import time
 from typing import TYPE_CHECKING, Any
+from mmengine.logging import MessageHub
 
 from lightning import Callback
 
@@ -29,6 +30,8 @@ class IterationTimer(Callback):
         self.prog_bar = prog_bar
         self.on_step = on_step
         self.on_epoch = on_epoch
+        self._message_hub = MessageHub.get_current_instance()
+        self._iter = 0
 
         self.start_time: dict[str, float] = defaultdict(float)
         self.end_time: dict[str, float] = defaultdict(float)
@@ -83,6 +86,8 @@ class IterationTimer(Callback):
         batch_idx: int,
     ) -> None:
         """Log iteration data time on the training batch start."""
+        self._message_hub.update_info("iter", self._iter)
+        self._iter += 1
         self._on_batch_start(
             pl_module=pl_module, phase="train", batch_size=batch.batch_size,
         )
