@@ -5,6 +5,7 @@
 
 from typing import Optional, Tuple
 
+import torch.nn.functional as F
 from mmcv.ops.nms import NMSop
 from mmcv.ops.roi_align import RoIAlign
 from mmcv.utils import ConfigDict
@@ -41,6 +42,9 @@ class DetectionConfigurer(BaseConfigurer):
         """Configuration for model config."""
         super().configure_model(cfg, data_classes, model_classes, ir_options, **kwargs)
         self.configure_regularization(cfg)
+        if "yolox" in cfg.model.type.lower():
+            from mmdet.models.detectors import yolox
+            yolox.YOLOX._preprocess = new_preprocess
 
     def configure_regularization(self, cfg):  # noqa: C901
         """Patch regularization parameters."""
@@ -203,3 +207,20 @@ class IncrDetectionConfigurer(IncrConfigurerMixin, DetectionConfigurer):
 
 class SemiSLDetectionConfigurer(SemiSLConfigurerMixin, DetectionConfigurer):
     """Patch config to support semi supervised learning for object detection."""
+
+def new_preprocess(self, img, gt_bboxes):
+    scale_y = self._input_size[0] / self._default_input_size[0]
+    scale_x = self._input_size[1] / self._default_input_size[1]
+    if scale_x != 1 or scale_y != 1:
+        img = F.interpolate(
+            img,
+            size=self._input_size,
+            mode='bilinear',
+            align_corners=False)
+        pad_size = (800 - self._input_size[0]) // 2
+        img = F.pad(img, tuple((pad_size for _ in range(4))), "constant", 0.0)
+        for gt_bbox in gt_bboxes:
+            gt_bbox[..., 0::2] = gt_bbox[..., 0::2] * scale_x
+            gt_bbox[..., 1::2] = gt_bbox[..., 1::2] * scale_y
+            gt_bbox[..., 0:2] = gt_bbox[..., 0:2] + pad_size
+    return img, gt_bboxes

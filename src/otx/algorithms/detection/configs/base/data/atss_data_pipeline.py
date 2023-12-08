@@ -28,6 +28,7 @@ train_pipeline = [
         keep_ratio=False,
         override=True,  # Allow multiple resize
     ),
+    dict(type="Pad", size=(800, 1088), pad_val=114.0),
     dict(type="RandomFlip", flip_ratio=0.5),
     dict(type="Normalize", **__img_norm_cfg),
     dict(type="DefaultFormatBundle"),
