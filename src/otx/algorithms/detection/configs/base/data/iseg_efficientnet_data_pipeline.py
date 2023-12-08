@@ -80,7 +80,7 @@ test_pipeline = [
             dict(type="Resize", keep_ratio=False),
             dict(type="RandomFlip"),
             dict(type="Normalize", **__img_norm_cfg),
-            dict(type="Pad", size=(1024, 1024)),
+            dict(type="Pad", size_divisor=32),
             dict(type="ImageToTensor", keys=["img"]),
             dict(type="Collect", keys=["img"]),
         ],
