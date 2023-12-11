@@ -23,7 +23,7 @@ train_pipeline = [
     dict(type="MinIoURandomCrop", min_ious=(0.1, 0.3, 0.5, 0.7, 0.9), min_crop_size=0.3),
     dict(
         type="Resize",
-        img_scale=[(992, 736), (896, 736), (1088, 736), (992, 672), (992, 800)],
+        img_scale=[(992, 736), (896, 736), (1088, 736)],
         multiscale_mode="value",
         keep_ratio=False,
         override=True,  # Allow multiple resize
