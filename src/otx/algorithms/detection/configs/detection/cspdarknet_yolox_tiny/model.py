@@ -33,3 +33,4 @@ load_from = "https://storage.openvinotoolkit.org/repositories/openvino_training_
 
 fp16 = dict(loss_scale=512.0, bf16_training=False)
 ignore = False
+log_config = dict(interval=1)
