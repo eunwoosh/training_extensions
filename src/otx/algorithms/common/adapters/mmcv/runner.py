@@ -23,7 +23,10 @@ import warnings
 from typing import List, Optional, Sequence
 
 import mmcv
+import os
+import torch
 import torch.distributed as dist
+import contextlib
 from mmcv.runner import (
     RUNNERS,
     EpochBasedRunner,
@@ -31,8 +34,33 @@ from mmcv.runner import (
     IterLoader,
     get_dist_info,
 )
+from torch.profiler import ProfilerActivity, schedule
 from mmcv.runner.utils import get_host_info
 from torch.utils.data.dataloader import DataLoader
+
+
+def trace_handler(p):
+    print(p.key_averages().table(sort_by="self_xpu_time_total", row_limit=-1))
+    p.export_chrome_trace("/home/eunwoosh/otx/exp/trace_" + str(p.step_num) + ".json")
+
+
+def profiler_setup(profiling=False, *args, **kwargs):
+    my_schedule = schedule(
+        skip_first=0,
+        wait=2,
+        warmup=10,
+        active=10,
+        repeat=1)
+    if profiling:
+        return torch.profiler.profile(
+            *args,
+            schedule=my_schedule,
+            # on_trace_ready=trace_handler, 
+            on_trace_ready=torch.profiler.tensorboard_trace_handler('./tb_profile'), 
+            **kwargs
+        )
+    else:
+        return contextlib.nullcontext()
 
 
 # pylint: disable=too-many-instance-attributes, attribute-defined-outside-init
@@ -75,15 +103,20 @@ class EpochRunnerWithCancel(EpochBasedRunner):
         self.call_hook("before_train_epoch")
         if self.distributed:
             time.sleep(2)  # Prevent possible multi-gpu deadlock during epoch transition
-        for i, data_batch in enumerate(self.data_loader):
-            self._inner_iter = i
-            self.call_hook("before_train_iter")
-            self.run_iter(data_batch, train_mode=True, **kwargs)
-            self.call_hook("after_train_iter")
-            if self.stop():
-                break
-            self._iter += 1
-            self.save_ema_model = False  # revert ema status before new iter
+
+        should_profile = os.getenv("IPEX_ZE_TRACING", False)
+        with profiler_setup(profiling=should_profile, activities=[ProfilerActivity.CPU, ProfilerActivity.XPU]) as prof:
+            for i, data_batch in enumerate(self.data_loader):
+                self._inner_iter = i
+                self.call_hook("before_train_iter")
+                self.run_iter(data_batch, train_mode=True, **kwargs)
+                self.call_hook("after_train_iter")
+                if self.stop():
+                    break
+                self._iter += 1
+                self.save_ema_model = False  # revert ema status before new iter
+                if should_profile:
+                    prof.step()
         self.call_hook("after_train_epoch")
         self.stop()
         self._epoch += 1
