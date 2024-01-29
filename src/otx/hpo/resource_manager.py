@@ -15,15 +15,15 @@
 # and limitations under the License.
 
 import os
+import logging
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Literal, Optional
 
 import torch
 
 from otx.hpo.utils import check_positive
-from otx.utils.logger import get_logger
 
-logger = get_logger()
+logger = logging.getLogger()
 
 
 class BaseResourceManager(ABC):

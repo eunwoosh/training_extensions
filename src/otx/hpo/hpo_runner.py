@@ -20,6 +20,7 @@ import queue
 import signal
 import sys
 import time
+import logging
 from copy import deepcopy
 from dataclasses import dataclass
 from functools import partial
@@ -27,9 +28,8 @@ from typing import Any, Callable, Dict, Literal, Optional, Union
 
 from otx.hpo.hpo_base import HpoBase, Trial, TrialStatus
 from otx.hpo.resource_manager import get_resource_manager
-from otx.utils.logger import get_logger
 
-logger = get_logger()
+logger = logging.getLogger()
 
 
 @dataclass

@@ -17,12 +17,12 @@
 
 import math
 import typing
+import logging
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from otx.hpo.utils import check_positive
-from otx.utils.logger import get_logger
 
-logger = get_logger()
+logger = logging.getLogger()
 
 AVAILABLE_SEARCH_SPACE_TYPE = ["uniform", "quniform", "loguniform", "qloguniform", "choice"]
 
