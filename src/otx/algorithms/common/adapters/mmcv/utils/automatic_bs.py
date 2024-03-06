@@ -3,6 +3,7 @@
 # Copyright (C) 2023 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
+import time
 from copy import deepcopy
 from math import sqrt
 from typing import Callable, Dict, List
@@ -112,6 +113,8 @@ def adapt_batch_size(train_func: Callable, cfg, datasets: List, validate: bool =
         logger.info(f"learning rate is adapted : {origin_lr} -> {cfg.optimizer.lr}")
     else:
         logger.info("Adapting batch size is done. Batch size isn't changed.")
+
+    time.sleep(2)  # give time for stable training
 
 
 def _get_batch_size(cfg) -> int:
