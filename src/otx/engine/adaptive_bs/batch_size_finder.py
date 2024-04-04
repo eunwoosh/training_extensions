@@ -22,11 +22,11 @@ from typing import Optional
 
 import lightning.pytorch as pl
 from lightning.pytorch.callbacks.callback import Callback
-from lightning.pytorch.tuner.batch_size_scaling import _scale_batch_size
 from lightning.pytorch.utilities.exceptions import MisconfigurationException, _TunerExitException
 from lightning.pytorch.utilities.parsing import lightning_hasattr
 from lightning.pytorch.utilities.rank_zero import rank_zero_warn
 
+from otx.engine.adaptive_bs.batch_size_scaling import _scale_batch_size
 
 class BatchSizeFinder(Callback):
     """The ``BatchSizeFinder`` callback tries to find the largest batch size for a given model that does not give an

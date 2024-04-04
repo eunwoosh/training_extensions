@@ -29,6 +29,7 @@ from otx.core.utils.cache import TrainerArgumentsCache
 from otx.utils.utils import is_xpu_available
 
 from .hpo import execute_hpo, update_hyper_parameter
+from .adaptive_bs import Tuner
 from .utils.auto_configurator import DEFAULT_CONFIG_PER_TASK, AutoConfigurator
 
 if TYPE_CHECKING:
@@ -167,6 +168,7 @@ class Engine:
         metric: Metric | MetricCallable | None = None,
         run_hpo: bool = False,
         hpo_config: HpoConfig = HpoConfig(),  # noqa: B008 https://github.com/omni-us/jsonargparse/issues/423
+        adapt_batch_size: Literal["None", "Safe", "Full"] = "None",
         **kwargs,
     ) -> dict[str, Any]:
         """Trains the model using the provided LightningModule and OTXDataModule.
@@ -251,6 +253,12 @@ class Engine:
             **kwargs,
         )
         fit_kwargs: dict[str, Any] = {}
+
+        if adapt_batch_size != "None":
+            lit_module.datamodule = self._datamodule
+            tuner = Tuner(self.trainer)
+            tuner.scale_batch_size(lit_module, datamodule=self.datamodule, mode="power")
+
         if resume:
             fit_kwargs["ckpt_path"] = self.checkpoint
         elif self.checkpoint is not None:
