@@ -145,6 +145,6 @@ def fxt_clean_up_mem_cache() -> None:
 
 
 # TODO(Jaeguk): Add cpu param when OTX can run integration test parallelly for each task. # noqa: TD003
-@pytest.fixture(params=[pytest.param("gpu", marks=pytest.mark.gpu)])
+@pytest.fixture(params=[pytest.param("xpu", marks=pytest.mark.gpu)])
 def fxt_accelerator(request: pytest.FixtureRequest) -> str:
     return request.param

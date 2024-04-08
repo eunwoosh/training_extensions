@@ -314,11 +314,7 @@ def fxt_tags(fxt_user_name: str, fxt_version_tags: dict[str, str]) -> dict[str, 
         "user_name": fxt_user_name,
         "machine_name": platform.node(),
         "cpu_info": get_cpu_info()["brand_raw"],
-        "accelerator_info": subprocess.check_output(
-            ["nvidia-smi", "-L"],  # noqa: S603, S607
-        )
-        .decode()
-        .strip(),
+        "accelerator_info": "xpu",
     }
     msg = f"{tags = }"
     log.info(msg)

@@ -17,30 +17,26 @@ class TestPerfInstanceSegmentation(PerfTestBase):
     """Benchmark instance segmentation."""
 
     MODEL_TEST_CASES = [  # noqa: RUF012
-        Benchmark.Model(task="instance_segmentation", name="maskrcnn_efficientnetb2b", category="speed"),
-        Benchmark.Model(task="instance_segmentation", name="maskrcnn_r50", category="accuracy"),
-        Benchmark.Model(task="instance_segmentation", name="maskrcnn_swint", category="other"),
+        Benchmark.Model(task="instance_segmentation", name="rtmdet_inst_tiny", category="speed"),
     ]
 
     DATASET_TEST_CASES = [
         Benchmark.Dataset(
-            name=f"wgisd_small_{idx}",
-            path=Path("instance_seg/wgisd_small") / f"{idx}",
-            group="small",
-            num_repeat=5,
+            name="chicken",
+            path=Path("eugene_rtmdet/Chicken-Real-Time-coco-roboflow"),
+            group="medium",
+            num_repeat=3,
             extra_overrides={
                 "deterministic": "True",
                 "metric": "otx.core.metrics.fmeasure.FMeasure",
                 "callback_monitor": "val/f1-score",
                 "scheduler.monitor": "val/f1-score",
             },
-        )
-        for idx in (1, 2, 3)
-    ] + [
+        ),
         Benchmark.Dataset(
-            name="coco_car_person_medium",
-            path=Path("instance_seg/coco_car_person_medium"),
-            group="medium",
+            name="pcb_fics",
+            path=Path("eugene_rtmdet/PCB_FICS_FPIC_1.v2i.coco-mmdetection"),
+            group="large",
             num_repeat=5,
             extra_overrides={
                 "deterministic": "True",
@@ -50,8 +46,56 @@ class TestPerfInstanceSegmentation(PerfTestBase):
             },
         ),
         Benchmark.Dataset(
-            name="vitens_coliform",
-            path=Path("instance_seg/Vitens-Coliform-coco"),
+            name="vitens_aeromonas",
+            path=Path("eugene_rtmdet/Vitens-Aeromonas-coco"),
+            group="large",
+            num_repeat=5,
+            extra_overrides={
+                "deterministic": "True",
+                "metric": "otx.core.metrics.fmeasure.FMeasure",
+                "callback_monitor": "val/f1-score",
+                "scheduler.monitor": "val/f1-score",
+            },
+        ),
+        Benchmark.Dataset(
+            name="car",
+            path=Path("eugene_rtmdet/car-seg.v1i.coco-mmdetection"),
+            group="large",
+            num_repeat=5,
+            extra_overrides={
+                "deterministic": "True",
+                "metric": "otx.core.metrics.fmeasure.FMeasure",
+                "callback_monitor": "val/f1-score",
+                "scheduler.monitor": "val/f1-score",
+            },
+        ),
+        Benchmark.Dataset(
+            name="factory_package",
+            path=Path("eugene_rtmdet/factory_package.v1i.coco-mmdetection"),
+            group="large",
+            num_repeat=5,
+            extra_overrides={
+                "deterministic": "True",
+                "metric": "otx.core.metrics.fmeasure.FMeasure",
+                "callback_monitor": "val/f1-score",
+                "scheduler.monitor": "val/f1-score",
+            },
+        ),
+        Benchmark.Dataset(
+            name="skindetect",
+            path=Path("eugene_rtmdet/skindetect-roboflow"),
+            group="large",
+            num_repeat=5,
+            extra_overrides={
+                "deterministic": "True",
+                "metric": "otx.core.metrics.fmeasure.FMeasure",
+                "callback_monitor": "val/f1-score",
+                "scheduler.monitor": "val/f1-score",
+            },
+        ),
+        Benchmark.Dataset(
+            name="wgisd",
+            path=Path("eugene_rtmdet/wgisd-coco"),
             group="large",
             num_repeat=5,
             extra_overrides={
