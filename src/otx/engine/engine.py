@@ -30,6 +30,8 @@ from otx.utils.utils import is_xpu_available
 
 from .hpo import execute_hpo, update_hyper_parameter
 from .adaptive_bs import Tuner
+from .adaptive_bs.automatic_bs import adapt_batch_size as auto_bs
+from .adaptive_bs.bs_search_algo import _get_max_memory_reserved
 from .utils.auto_configurator import DEFAULT_CONFIG_PER_TASK, AutoConfigurator
 
 if TYPE_CHECKING:
@@ -255,9 +257,7 @@ class Engine:
         fit_kwargs: dict[str, Any] = {}
 
         if adapt_batch_size != "None":
-            lit_module.datamodule = self._datamodule
-            tuner = Tuner(self.trainer)
-            tuner.scale_batch_size(lit_module, datamodule=self.datamodule, mode="power")
+            auto_bs(self.trainer, lit_module, self.datamodule, not_increase=(adapt_batch_size!="Full"))
 
         if resume:
             fit_kwargs["ckpt_path"] = self.checkpoint
@@ -271,6 +271,10 @@ class Engine:
             datamodule=self.datamodule,
             **fit_kwargs,
         )
+
+        max_memory_reserved = _get_max_memory_reserved()
+        print("*"*100, max_memory_reserved)
+
         self.checkpoint = self.trainer.checkpoint_callback.best_model_path
         return self.trainer.callback_metrics
 
