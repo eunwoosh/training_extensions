@@ -7,8 +7,7 @@ from __future__ import annotations
 
 import logging
 from math import sqrt
-from pathlib import Path
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 from torch.cuda import is_available as cuda_available
 
@@ -17,17 +16,20 @@ from .bs_search_algo import BsSearchAlgo
 
 
 if TYPE_CHECKING:
-    from otx.engine.engine import Engine
+    from lightning import Trainer
+
+    from otx.core.model.module.base import OTXLitModule
+    from otx.core.data.module import OTXDataModule
 
 logger = logging.getLogger(__name__)
 
 
 def adapt_batch_size(
-    trainer: Engine,
-    model,
-    datamodule,
+    trainer: Trainer,
+    model: OTXLitModule,
+    datamodule: OTXDataModule,
     not_increase: bool = True,
-) -> tuple[dict[str, Any] | None, Path | None]:
+) -> None:
     """Decrease batch size if default batch size isn't fit to current GPU device.
 
     This function just setup for single iteration training to reduce time for adapting.
@@ -49,8 +51,8 @@ def adapt_batch_size(
     """
 
     if not (cuda_available() or is_xpu_available()):
-        logger.warning("Skip Auto-adaptive batch size: Adaptive batch size supports CUDA or XPU.")
-        return
+        msg = "Adaptive batch size supports CUDA or XPU."
+        raise RuntimeError(msg)
 
     default_bs = datamodule.config.train_subset.batch_size
     bs_search_algo = BsSearchAlgo(
@@ -75,7 +77,7 @@ def adapt_batch_size(
             for i, opt in enumerate(model.optimizer):
                 origin_lr = opt.keywords["lr"]
                 opt.keywords["lr"] *= sqrt(bs_change_ratio)  # Using root scale instead of linear scale
-                logger.warning(f"learning rate {i} is adapted : {origin_lr} -> {opt.keywords['lr']}")
+                logger.warning(f"learning rate of optimizer[{i}] is adapted : {origin_lr} -> {opt.keywords['lr']}")
         else:
             origin_lr = model.optimizer.keywords["lr"]
             model.optimizer.keywords["lr"] *= sqrt(bs_change_ratio)  # Using root scale instead of linear scale

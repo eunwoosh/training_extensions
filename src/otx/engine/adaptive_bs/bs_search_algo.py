@@ -21,6 +21,9 @@ from otx.utils.utils import is_xpu_available
 if TYPE_CHECKING:
     from lightning import Trainer
 
+    from otx.core.model.module.base import OTXLitModule
+    from otx.core.data.module import OTXDataModule
+
 logger = logging.getLogger(__name__)
 
 
@@ -45,13 +48,11 @@ def _run_trial(trainer: Trainer, model, datamodule, bs: int, trial_queue: mp.Que
         else:
             raise e
 
-    max_memory_reserved = _get_max_memory_reserved()
-    print("*"*100, max_memory_reserved)
-
+    print("*"*100, _get_max_memory_reserved())
     trial_queue.put(
         {
             "oom": oom,
-            "max_memory_reserved": max_memory_reserved,
+            "max_memory_reserved": _get_max_memory_reserved(),
         }
     )
 
@@ -66,7 +67,7 @@ class BsSearchAlgo:
         max_bs (int): Maximum batch size. It should be bigger than 0.
     """
 
-    def __init__(self, trainer, model, datamodule, default_bs, max_bs: int):
+    def __init__(self, trainer: Trainer, model: OTXLitModule, datamodule: OTXDataModule, max_bs: int):
         if default_bs <= 0:
             raise ValueError("Batch size should be bigger than 0.")
         if max_bs <= 0:
