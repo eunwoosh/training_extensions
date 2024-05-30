@@ -84,6 +84,9 @@ class TestPerfObjectDetection(PerfTestBase):
         Benchmark.Criterion(name="test/iter_time", summary="mean", compare="<", margin=0.1),
         Benchmark.Criterion(name="export/iter_time", summary="mean", compare="<", margin=0.1),
         Benchmark.Criterion(name="optimize/iter_time", summary="mean", compare="<", margin=0.1),
+        Benchmark.Criterion(name="test(train)/e2e_time", summary="max", compare=">", margin=0.1),
+        Benchmark.Criterion(name="test(export)/e2e_time", summary="max", compare=">", margin=0.1),
+        Benchmark.Criterion(name="test(optimize)/e2e_time", summary="max", compare=">", margin=0.1),
     ]
 
     @pytest.mark.parametrize(
@@ -104,6 +107,7 @@ class TestPerfObjectDetection(PerfTestBase):
         fxt_dataset: Benchmark.Dataset,
         fxt_benchmark: Benchmark,
         fxt_accelerator: str,
+        fxt_resume_from: Path | None,
     ):
         if fxt_model.name == "atss_resnext101" and fxt_accelerator == "xpu":
             pytest.skip(f"{fxt_model.name} doesn't support {fxt_accelerator}.")
@@ -113,4 +117,5 @@ class TestPerfObjectDetection(PerfTestBase):
             dataset=fxt_dataset,
             benchmark=fxt_benchmark,
             criteria=self.BENCHMARK_CRITERIA,
+            resume_from=fxt_resume_from,
         )
