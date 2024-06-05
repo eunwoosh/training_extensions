@@ -178,7 +178,7 @@ class Benchmark:
                     resume_from is not None
                     and (prev_train_dir := self._find_corresponding_dir(resume_from, tags)) is not None
                 ):
-                    copied_train_dir = self._copy_prev_train_dir(prev_train_dir, sub_work_dir)
+                    copied_train_dir = self._copy_prev_dir(prev_train_dir, sub_work_dir, "train")
 
                 command = [
                     "otx",
@@ -225,16 +225,22 @@ class Benchmark:
 
                 # Export & test
                 if self.eval_upto in ["export", "optimize"]:
-                    command = [
-                        "otx",
-                        "export",
-                        "--work_dir",
-                        str(sub_work_dir),
-                    ]
-                    for key, value in dataset.extra_overrides.get("export", {}).items():
-                        command.append(f"--{key}")
-                        command.append(str(value))
-                    self._run_command(command)
+                    if (
+                        copied_train_dir is not None
+                        and (prev_dir := self._find_following_dir(prev_train_dir.parent, "export")) is not None
+                    ):
+                        self._copy_prev_dir(prev_dir, sub_work_dir, "export")
+                    else:
+                        command = [
+                            "otx",
+                            "export",
+                            "--work_dir",
+                            str(sub_work_dir),
+                        ]
+                        for key, value in dataset.extra_overrides.get("export", {}).items():
+                            command.append(f"--{key}")
+                            command.append(str(value))
+                        self._run_command(command)
 
                     exported_model_path = sub_work_dir / ".latest" / "export" / "exported_model.xml"
                     if not exported_model_path.exists():
@@ -251,18 +257,24 @@ class Benchmark:
 
                 # Optimize & test
                 if self.eval_upto == "optimize":
-                    command = [
-                        "otx",
-                        "optimize",
-                        "--checkpoint",
-                        str(exported_model_path),
-                        "--work_dir",
-                        str(sub_work_dir),
-                    ]
-                    for key, value in dataset.extra_overrides.get("optimize", {}).items():
-                        command.append(f"--{key}")
-                        command.append(str(value))
-                    self._run_command(command)
+                    if (
+                        copied_train_dir is not None
+                        and (prev_dir := self._find_following_dir(prev_train_dir.parent, "optimize")) is not None
+                    ):
+                        self._copy_prev_dir(prev_dir, sub_work_dir, "optimize")
+                    else:
+                        command = [
+                            "otx",
+                            "optimize",
+                            "--checkpoint",
+                            str(exported_model_path),
+                            "--work_dir",
+                            str(sub_work_dir),
+                        ]
+                        for key, value in dataset.extra_overrides.get("optimize", {}).items():
+                            command.append(f"--{key}")
+                            command.append(str(value))
+                        self._run_command(command)
 
                     optimized_model_path = sub_work_dir / ".latest" / "optimize" / "optimized_model.xml"
                     if not optimized_model_path.exists():
@@ -305,11 +317,22 @@ class Benchmark:
                 return csv_file.parent
         return None
 
-    def _copy_prev_train_dir(self, prev_train_dir: Path, work_dir: Path) -> Path:
+    def _find_following_dir(self, prev_work_dir: Path, command: Literal["export", "optimize"]) -> Path | None:
+        prev_sym_link = prev_work_dir / ".latest" / command
+        if prev_sym_link.is_symlink():
+            return prev_work_dir / prev_sym_link.resolve().name
+        return None
+
+    def _copy_prev_dir(
+        self,
+        prev_train_dir: Path,
+        work_dir: Path,
+        command: Literal["trian", "export", "optimize"]
+    ) -> Path:
         work_dir.mkdir(parents=True, exist_ok=True)
         new_train_dir = work_dir / prev_train_dir.name
         shutil.copytree(prev_train_dir, new_train_dir, ignore_dangling_symlinks=True)
-        cache_dir = work_dir / ".latest" / "train"
+        cache_dir = work_dir / ".latest" / command
         cache_dir.parent.mkdir(exist_ok=True)
         cache_dir.symlink_to(Path("..") / new_train_dir.relative_to(work_dir))
 
