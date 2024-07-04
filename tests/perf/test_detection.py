@@ -113,7 +113,7 @@ class TestPerfObjectDetection(PerfTestBase):
         fxt_resume_from: Path | None,
         fxt_accelerator: str,
     ):
-        if fxt_model.name == "atss_resnext101" and fxt_accelerator == "xpu":
+        if fxt_model.name == "atss_resnext101":
             pytest.skip(f"{fxt_model.name} doesn't support {fxt_accelerator}.")
 
         self._test_perf(

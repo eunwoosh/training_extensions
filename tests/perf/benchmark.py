@@ -375,6 +375,7 @@ class Benchmark:
         """
         print(" ".join(command))
         kwargs["check"] = True
+        kwargs["timeout"] = 3600
         if not self.dry_run:
             subprocess.run(command, **kwargs)  # noqa: S603, PLW1510
 

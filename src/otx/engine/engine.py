@@ -29,6 +29,7 @@ from otx.core.types.precision import OTXPrecisionType
 from otx.core.types.task import OTXTaskType
 from otx.core.utils.cache import TrainerArgumentsCache
 from otx.utils.utils import is_xpu_available
+from otx.algo.strategies.cpu_single import IPEXBF16Precision
 
 from .adaptive_bs import adapt_batch_size
 from .hpo import execute_hpo, update_hyper_parameter
@@ -965,6 +966,9 @@ class Engine:
         if self._cache.requires_update(**kwargs) or self._trainer is None:
             self._cache.update(**kwargs)
             # set up xpu device
+            self._cache.update(strategy="cpu_single")
+            self._cache.update(plugins=[IPEXBF16Precision()])
+            self._cache.args["precision"] = None
             if self._device.accelerator == DeviceType.xpu:
                 self._cache.update(strategy="xpu_single")
                 # add plugin for Automatic Mixed Precision on XPU
