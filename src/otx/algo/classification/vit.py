@@ -249,6 +249,7 @@ class VisionTransformerForMulticlassCls(ForwardExplainMixInForViT, OTXMulticlass
         scheduler: LRSchedulerCallable | LRSchedulerListCallable = DefaultSchedulerCallable,
         metric: MetricCallable = MultiClassClsMetricCallable,
         torch_compile: bool = False,
+        **kwargs,
     ) -> None:
         self.arch = arch
         self.pretrained = pretrained

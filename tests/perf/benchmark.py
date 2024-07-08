@@ -207,6 +207,7 @@ class Benchmark:
                     with (copied_train_dir / "configs.yaml").open("w") as f:
                         self._run_command(command, stdout=f)  # replace previuos configs.yaml to new one
                 else:
+                    raise RuntimeError("HOHO"*100)
                     start_time = time()
                     self._run_command(command)
                     extra_metrics["train/e2e_time"] = time() - start_time
@@ -221,7 +222,7 @@ class Benchmark:
                     extra_metrics=extra_metrics,
                 )
 
-                self._run_test(sub_work_dir, dataset, tags, criteria, what2test="train")
+                # self._run_test(sub_work_dir, dataset, tags, criteria, what2test="train")
 
                 # Export & test
                 if self.eval_upto in ["export", "optimize"]:
@@ -234,20 +235,20 @@ class Benchmark:
                     for key, value in dataset.extra_overrides.get("export", {}).items():
                         command.append(f"--{key}")
                         command.append(str(value))
-                    self._run_command(command)
+                    # self._run_command(command)
 
                     exported_model_path = sub_work_dir / ".latest" / "export" / "exported_model.xml"
                     if not exported_model_path.exists():
                         exported_model_path = sub_work_dir / ".latest" / "export" / "exported_model_decoder.xml"
 
-                    self._run_test(
-                        sub_work_dir,
-                        dataset,
-                        tags,
-                        criteria,
-                        checkpoint=exported_model_path,
-                        what2test="export",
-                    )
+                    # self._run_test(
+                    #     sub_work_dir,
+                    #     dataset,
+                    #     tags,
+                    #     criteria,
+                    #     checkpoint=exported_model_path,
+                    #     what2test="export",
+                    # )
 
                 # Optimize & test
                 if self.eval_upto == "optimize":
@@ -262,7 +263,7 @@ class Benchmark:
                     for key, value in dataset.extra_overrides.get("optimize", {}).items():
                         command.append(f"--{key}")
                         command.append(str(value))
-                    self._run_command(command)
+                    # self._run_command(command)
 
                     optimized_model_path = sub_work_dir / ".latest" / "optimize" / "optimized_model.xml"
                     if not optimized_model_path.exists():
@@ -280,6 +281,7 @@ class Benchmark:
                 # Force memory clean up
                 gc.collect()
             except Exception as e:  # noqa: PERF203
+                raise e
                 exceptions.append((seed, str(e)))
 
         if exceptions:
@@ -312,6 +314,32 @@ class Benchmark:
         cache_dir = work_dir / ".latest" / "train"
         cache_dir.parent.mkdir(exist_ok=True)
         cache_dir.symlink_to(Path("..") / new_train_dir.relative_to(work_dir))
+
+        for each_dir in prev_train_dir.parent.iterdir():
+            each_dir_files = [str(val.name) for val in each_dir.iterdir()]
+            new_each_dir = work_dir / each_dir.name
+            if new_each_dir.exists():  # train
+                continue
+            
+            if "exported_model.xml" in each_dir_files:
+                shutil.copytree(each_dir, new_each_dir, ignore_dangling_symlinks=True)
+                cache_dir = work_dir / ".latest" / "export"
+                cache_dir.symlink_to(Path("..") / new_each_dir.relative_to(work_dir))
+                continue
+            elif "optimized_model.bin" in each_dir_files:
+                shutil.copytree(each_dir, new_each_dir, ignore_dangling_symlinks=True)
+                cache_dir = work_dir / ".latest" / "optimize"
+                cache_dir.symlink_to(Path("..") / new_each_dir.relative_to(work_dir))
+                continue
+
+            raw_csv = list(each_dir.glob("benchmark.raw.csv"))
+            if not raw_csv:  # .latest
+                continue
+            csv_file = raw_csv[0]
+            raw_data = pd.read_csv(csv_file)
+            if "optimize/iter_time" in raw_data.columns:  # optimize infer
+                continue
+            shutil.copytree(each_dir, new_each_dir, ignore_dangling_symlinks=True)
 
         return new_train_dir
 

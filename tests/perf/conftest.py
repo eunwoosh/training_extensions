@@ -240,6 +240,8 @@ def fxt_tags(fxt_user_name: str, fxt_version_tags: dict[str, str], fxt_accelerat
     elif fxt_accelerator == "xpu":
         raw = subprocess.check_output(args=["xpu-smi", "discovery", "--dump", "1,2"]).decode().strip()
         tags["accelerator_info"] = "\n".join([ret.replace('"', "").replace(",", " : ") for ret in raw.split("\n")[1:]])
+    elif fxt_accelerator == "cpu":
+        tags["accelerator_info"] = "cpu"
     msg = f"{tags = }"
     log.info(msg)
     return tags

@@ -868,6 +868,7 @@ class OVModel(OTXModel, Generic[T_OTXBatchDataEntity, T_OTXBatchPredEntity]):
                 if "dGPU" in device_name and "Intel" in device_name:
                     ov_device = device
                     break
+        ov_device = "GPU.1"
 
         plugin_config = {}
         if self.use_throughput_mode:
