@@ -118,6 +118,9 @@ class OTXModel(LightningModule, Generic[T_OTXBatchDataEntity, T_OTXBatchPredEnti
 
         self.optimizer_callable = ensure_callable(optimizer)
         self.scheduler_callable = ensure_callable(scheduler)
+        if isinstance(metric, str) and "_segm_callable" in metric:
+            from otx.core.metrics.dice import SegmCallable
+            metric = SegmCallable
         self.metric_callable = ensure_callable(metric)
 
         self.torch_compile = torch_compile

@@ -337,9 +337,11 @@ class Benchmark:
                 continue
             csv_file = raw_csv[0]
             raw_data = pd.read_csv(csv_file)
-            if "optimize/iter_time" in raw_data.columns:  # optimize infer
-                continue
-            shutil.copytree(each_dir, new_each_dir, ignore_dangling_symlinks=True)
+            for column in raw_data.columns:  # optimize infer
+                if "optimize" in column:
+                    break
+            else:
+                shutil.copytree(each_dir, new_each_dir, ignore_dangling_symlinks=True)
 
         return new_train_dir
 

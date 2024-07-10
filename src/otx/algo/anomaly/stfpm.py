@@ -36,6 +36,7 @@ class Stfpm(OTXAnomaly, OTXModel, AnomalibStfpm):
         self,
         layers: Sequence[str] = ["layer1", "layer2", "layer3"],
         backbone: str = "resnet18",
+        optimizer = None,
         **kwargs,
     ) -> None:
         OTXAnomaly.__init__(self)
