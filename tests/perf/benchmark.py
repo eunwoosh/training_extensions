@@ -241,14 +241,14 @@ class Benchmark:
                     if not exported_model_path.exists():
                         exported_model_path = sub_work_dir / ".latest" / "export" / "exported_model_decoder.xml"
 
-                    # self._run_test(
-                    #     sub_work_dir,
-                    #     dataset,
-                    #     tags,
-                    #     criteria,
-                    #     checkpoint=exported_model_path,
-                    #     what2test="export",
-                    # )
+                    self._run_test(
+                        sub_work_dir,
+                        dataset,
+                        tags,
+                        criteria,
+                        checkpoint=exported_model_path,
+                        what2test="export",
+                    )
 
                 # Optimize & test
                 if self.eval_upto == "optimize":
@@ -337,8 +337,8 @@ class Benchmark:
                 continue
             csv_file = raw_csv[0]
             raw_data = pd.read_csv(csv_file)
-            for column in raw_data.columns:  # optimize infer
-                if "optimize" in column:
+            for column in raw_data.columns:  # export, optimize infer
+                if "export" in column or "optimize" in column:
                     break
             else:
                 shutil.copytree(each_dir, new_each_dir, ignore_dangling_symlinks=True)
