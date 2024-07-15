@@ -241,6 +241,7 @@ class Engine:
                 >>> otx train --work_dir <WORK_DIR_PATH, str>
                 ```
         """
+        print("*"*100, f"{precision=}")
         checkpoint = checkpoint if checkpoint is not None else self.checkpoint
 
         if adaptive_bs != "None":
@@ -967,8 +968,8 @@ class Engine:
             self._cache.update(**kwargs)
             # set up xpu device
             self._cache.update(strategy="cpu_single")
-            self._cache.update(plugins=[IPEXBF16Precision()])
-            self._cache.args["precision"] = None
+            # self._cache.update(plugins=[IPEXBF16Precision()])
+            # self._cache.args["precision"] = None
             if self._device.accelerator == DeviceType.xpu:
                 self._cache.update(strategy="xpu_single")
                 # add plugin for Automatic Mixed Precision on XPU
