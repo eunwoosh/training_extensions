@@ -6,25 +6,19 @@
 
 from __future__ import annotations
 
-from logging import warning
-from typing import TYPE_CHECKING
-from typing import Callable, Any
-from functools import partial
-from contextlib import contextmanager
+from typing import TYPE_CHECKING, Any
 
 import torch
 import intel_extension_for_pytorch as ipex
-from intel_extension_for_pytorch.optim._optimizer_utils import IPEX_FUSED_OPTIMIZER_LIST_CPU as IPEX_FUSED_OPTIMIZER_LIST
-from torch.nn import Module
-from torch.optim import Optimizer, LBFGS
 from lightning.pytorch.strategies import StrategyRegistry
 from lightning.pytorch.strategies.single_device import SingleDeviceStrategy
-from lightning.pytorch.plugins.precision import Precision
+from lightning.pytorch.plugins.precision import MixedPrecision
 
 if TYPE_CHECKING:
     import lightning.pytorch as pl
     from lightning_fabric.plugins import CheckpointIO
     from lightning_fabric.utilities.types import _DEVICE
+    from lightning.pytorch.plugins.precision import Precision
 
 
 class SingleCPUStrategy(SingleDeviceStrategy):
@@ -60,11 +54,17 @@ class SingleCPUStrategy(SingleDeviceStrategy):
             raise RuntimeError(msg)
         if trainer.task != "SEMANTIC_SEGMENTATION":
             if len(self.optimizers) == 1:  # type: ignore[has-type]
-                ipex.optimize(self.model.model, optimizer=self.optimizers[0], inplace=True)
-                # ipex.optimize(self.model.model, optimizer=self.optimizers[0], inplace=True, dtype=torch.bfloat16)
+                # ipex.optimize(self.model.model, optimizer=self.optimizers[0], inplace=True)
+                ipex.optimize(self.model, optimizer=self.optimizers[0], inplace=True, dtype=torch.bfloat16)
             else:  # for inference
                 trainer.model.eval()
                 self.model.model = ipex.optimize(trainer.model.model)
+
+    def lightning_module_state_dict(self) -> dict[str, Any]:
+        """Returns model state."""
+        assert self.lightning_module is not None
+        state_dict = self.lightning_module.state_dict()
+        return state_dict
 
 
 StrategyRegistry.register(
@@ -73,51 +73,10 @@ StrategyRegistry.register(
     description="Strategy that enables training on single CPU",
 )
 
-class IPEXBF16Precision(Precision):
+class IPEXBF16Precision(MixedPrecision):
     """Create Precision Plugin for IPEX BFloat16."""
 
     precision: str | int = 'bf16'
 
-    @contextmanager
-    def forward_context(self):
-        """AMP for managing model forward/training_step/evaluation_step/predict_step."""
-        with torch.cpu.amp.autocast():
-            yield
-
-    def optimizer_step(
-        self,
-        optimizer: Optimizer,
-        model: "pl.LightningModule" | Module,
-        closure: Callable[[], Any],
-        **kwargs: Any
-    ) -> Any:
-        """Bf16 optimizer step."""
-        """Hook to run the optimizer step."""
-        if type(optimizer) in IPEX_FUSED_OPTIMIZER_LIST:
-            return super().optimizer_step(optimizer, model=model, closure=closure, **kwargs)
-
-        if isinstance(model, pl.LightningModule):
-            closure = partial(self._wrap_closure, model, optimizer, closure)
-
-        # Only `torch.optim.LBFGS`  need to reevaluate closure multiple times
-        # in optimizer.step(...) now.
-        if isinstance(optimizer, LBFGS):
-            RuntimeError(
-                "IPEX BFloat16 and the LBFGS optimizer are not compatible "
-                f"(optimizer",
-                "Hint: Set 'use_ipex' to False or not set 'precision' to 'bf16'"
-                " if LBFGS optimizer is necessary"
-            )
-
-        # Detect custom optimzer
-        if type(optimizer).__name__ not in dir(torch.optim):
-            warning("Seems like you are using a custom optimizer,"
-                    "please make sure that 'optimizer.step(closure)'"
-                    " does not need to be called in training stage")
-
-        # For optimizer not in IPEX_FUSED_OPTIMIZER_LIST,
-        # `closure()` needs to be called to backward the loss to avoid `.grad` being None
-        closure_result = closure()
-        optimizer.step(**kwargs)
-
-        return closure_result
+    def autocast_context_manager(self) -> torch.autocast:
+        return torch.cpu.amp.autocast(True, dtype=torch.bfloat16)

@@ -6,6 +6,9 @@
 __version__ = "2.2.0rc0"
 
 from otx.core.types import *  # noqa: F403
+import torch
+import intel_extension_for_pytorch  # noqa: F401
+
 
 OTX_LOGO: str = """
 
