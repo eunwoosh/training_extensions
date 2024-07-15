@@ -57,14 +57,12 @@ class SingleCPUStrategy(SingleDeviceStrategy):
             ipex.optimize(self.model, optimizer=self.optimizers[0], inplace=True, dtype=torch.bfloat16)
         else:  # for inference
             trainer.model.eval()
-            self.model.model = ipex.optimize(trainer.model.model)
+            ipex.optimize(self.model, inplace=True, dtype=torch.bfloat16)
 
-    def lightning_module_state_dict(self) -> dict[str, Any]:
-        """Returns model state."""
-        assert self.lightning_module is not None
-        state_dict = self.lightning_module.state_dict()
-        return state_dict
-
+    def on_test_start(self) -> None:
+        """Called when test begins."""
+        super().on_test_start()
+        ipex.optimize(self.model, inplace=True, dtype=torch.bfloat16)
 
 StrategyRegistry.register(
     SingleCPUStrategy.strategy_name,
