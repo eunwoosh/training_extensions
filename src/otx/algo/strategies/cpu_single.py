@@ -52,13 +52,12 @@ class SingleCPUStrategy(SingleDeviceStrategy):
         if len(self.optimizers) > 1:  # type: ignore[has-type]
             msg = "CPU strategy doesn't support multiple optimizers"
             raise RuntimeError(msg)
-        if trainer.task != "SEMANTIC_SEGMENTATION":
-            if len(self.optimizers) == 1:  # type: ignore[has-type]
-                # ipex.optimize(self.model.model, optimizer=self.optimizers[0], inplace=True)
-                ipex.optimize(self.model, optimizer=self.optimizers[0], inplace=True, dtype=torch.bfloat16)
-            else:  # for inference
-                trainer.model.eval()
-                self.model.model = ipex.optimize(trainer.model.model)
+        if len(self.optimizers) == 1:  # type: ignore[has-type]
+            # ipex.optimize(self.model.model, optimizer=self.optimizers[0], inplace=True)
+            ipex.optimize(self.model, optimizer=self.optimizers[0], inplace=True, dtype=torch.bfloat16)
+        else:  # for inference
+            trainer.model.eval()
+            self.model.model = ipex.optimize(trainer.model.model)
 
     def lightning_module_state_dict(self) -> dict[str, Any]:
         """Returns model state."""
