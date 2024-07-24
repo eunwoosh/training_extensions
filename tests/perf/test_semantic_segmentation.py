@@ -20,9 +20,9 @@ class TestPerfSemanticSegmentation(PerfTestBase):
         Benchmark.Model(task="semantic_segmentation", name="litehrnet_18", category="balance"),
         Benchmark.Model(task="semantic_segmentation", name="litehrnet_s", category="speed"),
         Benchmark.Model(task="semantic_segmentation", name="litehrnet_x", category="accuracy"),
-        Benchmark.Model(task="semantic_segmentation", name="segnext_b", category="other"),
-        Benchmark.Model(task="semantic_segmentation", name="segnext_s", category="other"),
-        Benchmark.Model(task="semantic_segmentation", name="segnext_t", category="other"),
+        # Benchmark.Model(task="semantic_segmentation", name="segnext_b", category="other"),
+        # Benchmark.Model(task="semantic_segmentation", name="segnext_s", category="other"),
+        # Benchmark.Model(task="semantic_segmentation", name="segnext_t", category="other"),
         Benchmark.Model(task="semantic_segmentation", name="dino_v2", category="other"),
     ]
 

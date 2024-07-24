@@ -77,6 +77,7 @@ class OTXDataModule(LightningDataModule):
         self.tile_config = tile_config
         self.vpm_config = vpm_config
 
+        mem_cache_size = "0"
         self.mem_cache_size = mem_cache_size
         self.mem_cache_img_max_size = mem_cache_img_max_size
 
@@ -318,6 +319,7 @@ class OTXDataModule(LightningDataModule):
         """Get test dataloader."""
         config = self.test_subset
         dataset = self._get_dataset(config.subset_name)
+        config.num_workers = 0
 
         return DataLoader(
             dataset=dataset,
