@@ -183,11 +183,11 @@ class OTXDataset(Dataset, Generic[T_OTXDataEntity]):
         if self.mem_cache_handler.frozen:
             return img_data
 
-        height, width = img_data.shape[:2]
         if self.mem_cache_img_max_size is None:
             self.mem_cache_handler.put(key=key, data=img_data, meta=None)
             return img_data
 
+        height, width = img_data.shape[:2]
         max_height, max_width = self.mem_cache_img_max_size
 
         if height <= max_height and width <= max_width:

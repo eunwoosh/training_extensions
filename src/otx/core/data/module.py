@@ -153,10 +153,12 @@ class OTXDataModule(LightningDataModule):
                     if isinstance(input_size, int)
                     else tuple(input_size)
                 )
+                self.mem_cache_img_max_size = (int(val * 1.2) for val in self.mem_cache_img_max_size)
 
         self.input_size = input_size
 
         if self.tile_config.enable_tiler and self.tile_config.enable_adaptive_tiling:
+            self.mem_cache_img_max_size = None
             adapt_tile_config(self.tile_config, dataset=dataset)
 
         config_mapping = {
