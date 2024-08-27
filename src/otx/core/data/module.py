@@ -153,7 +153,7 @@ class OTXDataModule(LightningDataModule):
                     if isinstance(input_size, int)
                     else tuple(input_size)
                 )
-                self.mem_cache_img_max_size = (int(val * 1.2) for val in self.mem_cache_img_max_size)
+                self.mem_cache_img_max_size = tuple(int(val * 1.2) for val in self.mem_cache_img_max_size)
 
         self.input_size = input_size
 
